@@ -56,7 +56,6 @@ for key in new_df['place_id'].unique(): # 미터ID 200개의 리스트를 unique
     fcst = results_ARIMA.forecast(24) # 24시간을 예측합니다.
 
     a = pd.DataFrame() # a라는 데이터프레임에 예측값을 정리합니다.
-    
     for i in range(24):
         a['X2018_7_1_'+str(i+1)+'h']=[fcst[0][i]] # column명을 submission 형태에 맞게 지정합니다.
 
