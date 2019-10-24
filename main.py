@@ -11,7 +11,7 @@ from statsmodels.tsa.arima_model import ARIMA # ARIMA 모델
 # %matplotlib inline
 x_shape = 7 * 24
 y_shape = 1 * 24
-test = pd.read_csv("input/test.csv")
+test = pd.read_csv("input/test2.csv")
 submission = pd.read_csv("input/submission_1002.csv")
 
 print(test.shape)
@@ -41,8 +41,9 @@ from keras.layers import Dense, LSTM
 agg={}
 for i in range(1, len(test_cut.columns) ): #시간을 제외한 1열부터 마지막 열까지를 for문으로 작동시킵니다.
     key = test_cut.columns[i]
-    test_median=test_cut.iloc[:,i].mean()
-    test_cut.iloc[:, i] = test_cut.iloc[:,i].fillna(test_median)
+    # test_median=test_cut.iloc[:,i].mean()
+    # test_cut.iloc[:, i] = test_cut.iloc[:,i].fillna(test_median)
+    test_cut.iloc[:, i] = test_cut.iloc[:,i].fillna(method='ffill')
 
     row = test_cut.iloc[:, i].values
     # print(row)

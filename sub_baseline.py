@@ -6,7 +6,7 @@ from datetime import datetime, timedelta # 시간 데이터 처리
 from statsmodels.tsa.arima_model import ARIMA # ARIMA 모델
 # %matplotlib inline
 
-test = pd.read_csv("input/test2.csv")
+test = pd.read_csv("input/test3.csv")
 submission = pd.read_csv("input/submission_1002.csv")
 
 test['Time'] = pd.to_datetime(test['Time']) 
@@ -23,6 +23,7 @@ for i in test.columns:
 new_df=pd.DataFrame({'place_id':place_id,'time':time,'target':target})
 new_df=new_df.dropna() # 결측치를 제거합니다.
 new_df=new_df.set_index('time') # time을 인덱스로 저장합니다.
+print(new_df.shape)
 
 p = d = q = range(0, 2)
 pdq = list(itertools.product(p, d, q))
@@ -52,16 +53,14 @@ agg={}
 for key in new_df['place_id'].unique(): # 미터ID 200개의 리스트를 unique()함수를 통해 추출합니다.
     temp = new_df.loc[new_df['place_id']==key] # 미터ID 하나를 할당합니다.
     temp_1h=temp.resample('1h').sum() # 1시간 단위로 정리합니다.
-    print(temp_1h)
     temp_1day=temp.resample('D').sum() # 1일 단위로 정리합니다.
 
     
-    #     # 시간별 예측
-    # model = ARIMA(temp_1h['target'], order=get_optimal_params(temp_1h['target'])) # AIC를 최소화하는 최적의 파라미터로 모델링합니다.
-    # results_ARIMA = model.fit(disp=-1)
-    # fcst = results_ARIMA.forecast(24) # 24시간을 예측합니다.
+        # 시간별 예측
+    model = ARIMA(temp_1h['target'], order=get_optimal_params(temp_1h['target'])) # AIC를 최소화하는 최적의 파라미터로 모델링합니다.
+    results_ARIMA = model.fit(disp=-1)
+    fcst = results_ARIMA.forecast(24) # 24시간을 예측합니다.
 
-    fcst = predict_hour()
 
     a = pd.DataFrame() # a라는 데이터프레임에 예측값을 정리합니다.
     for i in range(24):
@@ -95,4 +94,4 @@ output1 = pd.concat(agg, ignore_index=False)
 output2 = output1.reset_index().drop(['level_0','level_1'], axis=1)
 output2['id'] = output2['meter_id'].str.replace('X','').astype(int)
 output2 =  output2.sort_values(by='id', ascending=True).drop(['id'], axis=1).reset_index(drop=True)
-output2.to_csv('sub_baseline.csv', index=False)
+output2.to_csv('sub_baseline2.csv', index=False)
