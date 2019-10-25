@@ -1,7 +1,7 @@
 
 
 
-
+import numpy as np
 
 
 import matplotlib.pyplot as plt # 데이터 시각화
@@ -11,7 +11,7 @@ from statsmodels.tsa.arima_model import ARIMA # ARIMA 모델
 # %matplotlib inline
 x_shape = 7 * 24
 y_shape = 1 * 24
-test = pd.read_csv("input/test2.csv")
+test = pd.read_csv("input/test5.csv")
 submission = pd.read_csv("input/submission_1002.csv")
 
 print(test.shape)

@@ -1,7 +1,10 @@
 import pandas as pd # 데이터 전처리
 import numpy as np # 데이터 전처리
 from pandas import DataFrame #데이터 전처리 
-
+import sys
+import math
+x_shape = 24 * 3
+y_shape = 24 * 1
 def weather_preprocess(weather):
     cut_index =  weather.loc[weather['일시'] == '2017.7.1 0:00'].index
     weather_cut = weather[cut_index[0]: ]
@@ -49,6 +52,7 @@ def fbfill_nan(test):
     test2 = test.copy()
     test2 = test2.fillna(method='ffill', limit= 4)
     test2 = test2.fillna(method='bfill', limit= 3)
+    
     # for k in range(1, len(test2.columns) ): #시간을 제외한 1열부터 마지막 열까지를 for문으로 작동시킵니다.
     #     counting=test2.loc[ test2.iloc[:,k].isnull()==False ][ test2.columns[k] ].index
 
@@ -68,19 +72,120 @@ def fbfill_nan(test):
             
                     
     return test2
+def get_time(index):
+    time = index % 24
+    print(time)
+
+    return time
+
+def adjust_null(test):
+    test2 = test.copy()
+    for k in range(1, len(test2.columns) ): #시간을 제외한 1열부터 마지막 열까지를 for문으로 작동시킵니다.
+        test_median=test2.iloc[:,k].median() #값을 대체하는 과정에서 값이 변경 될 것을 대비해 해당 세대의 중앙값을 미리 계산하고 시작합니다.
+        counting=test2.loc[ test2.iloc[:,k].isnull()==False ][ test2.columns[k] ].index
+
+        df=DataFrame( list( zip( counting[:-1], counting[1:] - counting[:-1] -1  ) ), columns=['index','count'] )
+
+        df2= df[ (df['count'] > 0) ] #결측치가 존재하는 부분만 추출
+        df2=df2.reset_index(drop=True) #기존에 존재하는 index를 초기화 하여 이후 for문에 사용함
+
+        for i,j in zip( df2['index'], df2['count'] ) : # i = 해당 세대에서 값이 존재하는 index, j = 현재 index 밑의 결측치 갯수
+            start_index = i + 1
+            end_index = i + j
+            
+            start_index = start_index - (start_index % 24)
+            end_index = end_index + (24 -(end_index % 24))
+
+            # print(start_index)
+            # print(end_index)
+            test2.iloc[start_index : end_index, k] = None
+
+        counting=test2.loc[ test2.iloc[:,k].isnull()==False ][ test2.columns[k] ].index
+        df=DataFrame( list( zip( counting[:-1], counting[1:] - counting[:-1] -1  ) ), columns=['index','count'] )
+        df2= df[ (df['count'] > 24) ] #결측치가 존재하는 부분만 추출
+        df2=df2.reset_index(drop=True) #기존에 존재하는 index를 초기화 하여 이후 for문에 사용함
+
+        
+        # for i,j in zip( df2['index'], df2['count'] ) : # i = 해당 세대에서 값이 존재하는 index, j = 현재 index 밑의 결측치 갯수
+        #     index_list = np.arange(i, i + j)
+        #     print(index_list)
+        #     test2 = test2.iloc[:, k].drop(index_list)
+            
 
 
+
+
+
+    return test2
+
+def drop_null(data):
+
+    ########### 첫번째 데이터까지의 nan 값들 제거
+    counting= data.loc[ data.isnull()==False].index
+    index_list = np.arange(0, counting[0])
+    data = data.drop(index_list)
+
+    df=DataFrame( list( zip( counting[:-1], counting[1:] - counting[:-1] -1  ) ), columns=['index','count'] )
+
+    df2= df[ (df['count'] > 24) ] #결측치가 존재하는 부분만 추출
+    df2=df2.reset_index(drop=True) #기존에 존재하는 index를 초기화 하여 이후 for문에 사용함
+
+    for i,j in zip( df2['index'], df2['count'] ) : # i = 해당 세대에서 값이 존재하는 index, j = 현재 index 밑의 결측치 갯수
+        i += 1
+        index_list = np.arange(i, i + j)
+        data = data.drop(index_list)
+
+    return data
+            
+            
+def split(data, x_size, y_size):
+
+    x = []; y = []
+    for i in range(len(data) - x_size - y_size):
+        
+        if math.isnan(data[i]) or math.isnan(data[i + 24]) or math.isnan(data[i+ 48]):
+            continue
+        elif math.isnan(data[x_size + i]):
+            i += 24
+        x.append(data[i: x_size + i])
+        y.append(data[x_size + i: x_size + y_size + i])
+        
+
+    pred_data = data[len(data) - x_size: ]
+    pred_data = pred_data.reshape(-1, pred_data.shape[0])
+
+    return np.array(x), np.array(y), pred_data
 
 # test = pd.read_csv('input/test.csv')
 # test = nan_preprocess(test)
 # print(test)
 # test = fbfill_nan(test)
 
-test = pd.read_csv('input/test4.csv')
+# test = pd.read_csv('input/test4.csv')
+# test = adjust_null(test)
+# test.to_csv('test5.csv', index=False)
+
+test = pd.read_csv('input/test5.csv')
+
+for i in range(1, len(test.columns) ):
+    key = test.columns[i]
+    print(key)
+    data = drop_null(test.iloc[:, i+1])
+    data = data.values
+    
+
+    x, y, pred = split(data, x_shape, y_shape)
+
+    print(x.shape)
+    print(y.shape)
+    print(pred.shape)
+
+    from sklearn.utils import shuffle
+    x, y = shuffle(x, y, random_state = 30)
 
 
 
-
+    
 
 
 # for i in range(len(degree)):
@@ -92,16 +197,13 @@ test = pd.read_csv('input/test4.csv')
 
 # submission = pd.read_csv("input/submission_1002.csv")
 
-# from keras.models import Sequential
-# from keras.layers import Dense
-# def build_model():
-#     model = Sequential()
-#     model.add(Dense(100, activation='relu', input_shape=(2,)))
-#     model.add(Dense(12, activation='relu'))
-#     model.add(Dense(1))
-
-#     model.summary()
-#     return model
+from keras.models import Sequential
+from keras.layers import Dense, Conv1D
+def build_model():
+    model = Sequential()
+    model.add(Conv1d(32, 2,)
+    model.summary()
+    return model
 
 # agg={}
 # for i in range(1, 2 ): #시간을 제외한 1열부터 마지막 열까지를 for문으로 작동시킵니다.

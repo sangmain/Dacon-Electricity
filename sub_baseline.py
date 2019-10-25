@@ -6,7 +6,7 @@ from datetime import datetime, timedelta # 시간 데이터 처리
 from statsmodels.tsa.arima_model import ARIMA # ARIMA 모델
 # %matplotlib inline
 
-test = pd.read_csv("input/test3.csv")
+test = pd.read_csv("input/test5.csv")
 submission = pd.read_csv("input/submission_1002.csv")
 
 test['Time'] = pd.to_datetime(test['Time']) 
@@ -73,7 +73,8 @@ for key in new_df['place_id'].unique(): # 미터ID 200개의 리스트를 unique
     fcst = results_ARIMA.forecast(10) # 10일을 예측합니다.
 
     for i in range(10):
-        a['X2018_7_'+str(i+1)+'_d']=[fcst[0][i]] # column명을 submission 형태에 맞게 지정합니다.
+        a['X2018_7_'+str(i+1)+'_d']=[fcst[0]
+        [i]] # column명을 submission 형태에 맞게 지정합니다.
     
     
     # 월별 예측
@@ -94,4 +95,4 @@ output1 = pd.concat(agg, ignore_index=False)
 output2 = output1.reset_index().drop(['level_0','level_1'], axis=1)
 output2['id'] = output2['meter_id'].str.replace('X','').astype(int)
 output2 =  output2.sort_values(by='id', ascending=True).drop(['id'], axis=1).reset_index(drop=True)
-output2.to_csv('sub_baseline2.csv', index=False)
+output2.to_csv('sub_baseline.csv', index=False)
