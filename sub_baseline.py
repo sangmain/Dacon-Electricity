@@ -6,7 +6,7 @@ from datetime import datetime, timedelta # 시간 데이터 처리
 from statsmodels.tsa.arima_model import ARIMA # ARIMA 모델
 # %matplotlib inline
 
-test = pd.read_csv("input/test5.csv")
+test = pd.read_csv("input/drop_dummy.csv")
 submission = pd.read_csv("input/submission_1002.csv")
 
 test['Time'] = pd.to_datetime(test['Time']) 
@@ -23,7 +23,10 @@ for i in test.columns:
 new_df=pd.DataFrame({'place_id':place_id,'time':time,'target':target})
 new_df=new_df.dropna() # 결측치를 제거합니다.
 new_df=new_df.set_index('time') # time을 인덱스로 저장합니다.
-print(new_df.shape)
+# print(new_df.shape)
+# new_df.to_csv("sub_form.csv", index=False)
+
+
 
 p = d = q = range(0, 2)
 pdq = list(itertools.product(p, d, q))
@@ -44,14 +47,22 @@ def get_optimal_params(y):
     optimal_params = param_dict[min_aic]
     return optimal_params
 
-def predict_hour():
-    
-    predict = []
-    return predict
 
 agg={}
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+
+cnt = 0
 for key in new_df['place_id'].unique(): # 미터ID 200개의 리스트를 unique()함수를 통해 추출합니다.
+
     temp = new_df.loc[new_df['place_id']==key] # 미터ID 하나를 할당합니다.
+    data = temp['target'].values
+    data = data.reshape(-1, 1)
+    scaler = StandardScaler()
+    scaler.fit(data)
+    data = scaler.transform(data)
+    data = data.reshape(-1)
+    temp['target'] = data
+
     temp_1h=temp.resample('1h').sum() # 1시간 단위로 정리합니다.
     temp_1day=temp.resample('D').sum() # 1일 단위로 정리합니다.
 
@@ -60,35 +71,49 @@ for key in new_df['place_id'].unique(): # 미터ID 200개의 리스트를 unique
     model = ARIMA(temp_1h['target'], order=get_optimal_params(temp_1h['target'])) # AIC를 최소화하는 최적의 파라미터로 모델링합니다.
     results_ARIMA = model.fit(disp=-1)
     fcst = results_ARIMA.forecast(24) # 24시간을 예측합니다.
-
+    fcst = np.array(fcst[0][:])
+    fcst = fcst.reshape(-1, 1)
+    fcst = scaler.inverse_transform(fcst)
+    fcst = fcst.reshape(-1)
 
     a = pd.DataFrame() # a라는 데이터프레임에 예측값을 정리합니다.
     for i in range(24):
-        a['X2018_7_1_'+str(i+1)+'h']=[fcst[0][i]] # column명을 submission 형태에 맞게 지정합니다.
-
+        a['X2018_7_1_'+str(i+1)+'h']= [fcst[i]] # column명을 submission 형태에 맞게 지정합니다.
         
     # 일별 예측
     model = ARIMA(temp_1day['target'], order=get_optimal_params(temp_1day['target'])) # AIC를 최소화하는 최적의 파라미터로 모델링합니다.
     results_ARIMA = model.fit(disp=-1)
     fcst = results_ARIMA.forecast(10) # 10일을 예측합니다.
+    fcst = np.array(fcst[0][:])
+    fcst = fcst.reshape(-1, 1)
+    fcst = scaler.inverse_transform(fcst)
+    fcst = fcst.reshape(-1)
+
+
 
     for i in range(10):
-        a['X2018_7_'+str(i+1)+'_d']=[fcst[0]
-        [i]] # column명을 submission 형태에 맞게 지정합니다.
+        a['X2018_7_'+str(i+1)+'_d']=[fcst[i]] # column명을 submission 형태에 맞게 지정합니다.
     
     
     # 월별 예측
     # 일별로 예측하여 7월 ~ 11월의 일 수에 맞게 나누어 합산합니다.
     fcst = results_ARIMA.forecast(153)
-    a['X2018_7_m'] = [np.sum(fcst[0][:31])] # 7월 
-    a['X2018_8_m'] = [np.sum(fcst[0][31:62])] # 8월
-    a['X2018_9_m'] = [np.sum(fcst[0][62:92])] # 9월
-    a['X2018_10_m'] = [np.sum(fcst[0][92:123])] # 10월
-    a['X2018_11_m'] = [np.sum(fcst[0][123:153])] # 11월
+    fcst = np.array(fcst[0][:])
+    fcst = fcst.reshape(-1, 1)
+    fcst = scaler.inverse_transform(fcst)
+    fcst = fcst.reshape(-1)
+
+
+    a['X2018_7_m'] = [np.sum(fcst[:31])] # 7월 
+    a['X2018_8_m'] = [np.sum(fcst[31:62])] # 8월
+    a['X2018_9_m'] = [np.sum(fcst[62:92])] # 9월
+    a['X2018_10_m'] = [np.sum(fcst[92:123])] # 10월
+    a['X2018_11_m'] = [np.sum(fcst[123:153])] # 11월
     
     a['meter_id'] = key 
     agg[key] = a[submission.columns.tolist()]
     print(key)
+
 print('---- Modeling Done ----')
 
 output1 = pd.concat(agg, ignore_index=False)
