@@ -46,8 +46,8 @@ def nan_preprocess(test):
 
 def fbfill_nan(test):
     test2 = test.copy()
-    test2 = test2.fillna(method='ffill', limit= 1)
-    # test2 = test2.fillna(method='bfill', limit= 4)
+    test2 = test2.fillna(method='ffill', limit= 4)
+    test2 = test2.fillna(method='bfill', limit= 3)
     
     # for k in range(1, len(test2.columns) ): #시간을 제외한 1열부터 마지막 열까지를 for문으로 작동시킵니다.
     #     counting=test2.loc[ test2.iloc[:,k].isnull()==False ][ test2.columns[k] ].index
@@ -210,11 +210,11 @@ def data_summary(shape_list):
 
 if __name__ == '__main__':
 
-    x_shape = 24 * 7
+    x_shape = 24 * 5
     y_shape = 24 * 1
     shape_list = []
 
-    test = pd.read_csv('input/test.csv')
+    # test = pd.read_csv('input/test.csv')
     
     # test = pd.read_csv('input/ordered_hour.csv')
     submission = pd.read_csv("input/submission_1002.csv")
@@ -226,7 +226,6 @@ if __name__ == '__main__':
     # test.to_csv("input/drop_dummy.csv", index=False)
 
     test = pd.read_csv('input/drop_dummy.csv')
-
 
     test = fbfill_nan(test)
     # test.to_csv("input/nan_filled.csv", index=False)
@@ -277,7 +276,8 @@ if __name__ == '__main__':
         model.compile(optimizer='adam', loss='mse')
 
         early_stopping = EarlyStopping(monitor='loss', patience=5, mode='auto')
-        model.fit(x, y, batch_size=15, epochs=20, callbacks=[early_stopping])
+        model.fit(x, y, batch_size=2, epochs=10)
+        # model.fit(x, y, batch_size=2, epochs=10, callbacks=[early_stopping])
         # if x.shape[0] < 100:
         #     early_stopping = EarlyStopping(monitor='loss', patience=5, mode='auto')
         #     model.fit(x, y, batch_size=15, epochs=20, callbacks=[early_stopping])
