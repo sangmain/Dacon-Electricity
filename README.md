@@ -31,7 +31,9 @@ Dacon provides already made code sub_baseline.py which gives loss score of 41.41
 I found out that it only trains on test data and fitted for every existing houses. I thought it was perfectly right way to do it.
 So I analysed test.csv
 
-'''python
+
+
+```python
 df=df_ori.loc[:,['Time',key]]
 print(df)
 df = df.dropna()
@@ -43,15 +45,16 @@ df['day'] = df['Time'].apply(lambda x: x.day)
 df=df.loc[:,['Time',key, 'year','quarter','month','day']]
 df.sort_values('Time', inplace=True, ascending=True)
 df = df.reset_index(drop=True)
+
 df["weekday"]=df.apply(lambda row: row["Time"].weekday(),axis=1)
 df["weekday"] = (df["weekday"] < 5).astype(int)
-'''
+```
 
 With "Time", added "year", "quarter", "month", "day", "weekday" to analyze data
 
 # Statistical Normality Test
 Using **D’Agostino’s K² Test** to know if data is a Normal Distribution 
-'''python
+```python
 stat, p = stats.normaltest(df.key)
 print('Statistics=%.3f, p=%.3f' % (stat, p))
 alpha = 0.05
@@ -59,5 +62,5 @@ if p > alpha:
     print('Data looks Gaussian (fail to reject H0)')
 else:
     print('Data does not look Gaussian (reject H0)')
-'''
+```
 
