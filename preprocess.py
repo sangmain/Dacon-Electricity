@@ -21,98 +21,62 @@ def weather_preprocess(weather):
     # print(degree)
     return degree.values, humidity.values
 
+def find_na(data, limit=0):
+    counting= data.loc[ data.isnull()==False].index
 
-def nan_preprocess(test):
-    test2 = test.copy()
+    df=DataFrame( list( zip( counting[:-1], counting[1:] - counting[:-1] -1  ) ), columns=['index','count'] )
 
-    for k in range(1, len(test2.columns) ): #시간을 제외한 1열부터 마지막 열까지를 for문으로 작동시킵니다.
-        test_median=test2.iloc[:,k].median() #값을 대체하는 과정에서 값이 변경 될 것을 대비해 해당 세대의 중앙값을 미리 계산하고 시작합니다.
-        counting=test2.loc[ test2.iloc[:,k].isnull()==False ][ test2.columns[k] ].index
+    df2= df[ (df['count'] > limit) ] #결측치가 존재하는 부분만 추출
+    df2=df2.reset_index(drop=True) #기존에 존재하는 index를 초기화 하여 이후 for문에 사용함
 
-        df=DataFrame( list( zip( counting[:-1], counting[1:] - counting[:-1] -1  ) ), columns=['index','count'] )
+    return df2
 
-        df2= df[ (df['count'] > 0) ] #결측치가 존재하는 부분만 추출
-        df2=df2.reset_index(drop=True) #기존에 존재하는 index를 초기화 하여 이후 for문에 사용함
+def overloaded_na_handle(data):
+    data_cp = data.copy()
 
-        for i,j in zip( df2['index'], df2['count'] ) : # i = 해당 세대에서 값이 존재하는 index, j = 현재 index 밑의 결측치 갯수
+    for k in range(1, len(data_cp.columns) ): #시간을 제외한 1열부터 마지막 열까지를 for문으로 작동시킵니다.
+        house = data.cp.iloc[:, k]
+        house_median = house.median()
+        nan_info_df = find_na(house, limit=0)
+    
+        for i,j in zip( nan_info_df['index'], nan_info_df['count'] ) : # i = 해당 세대에서 값이 존재하는 index, j = 현재 index 밑의 결측치 갯수
 
-            if test2.iloc[i,k]>=test_median: #현재 index에 존재하는 값이 해당 세대의 중앙 값 이상일때만 분산처리 실행
-                test2.iloc[ i + 1 : i+j+1 , k] = test2.iloc[i,k] / (j+1) 
+            if data_cp.iloc[i,k]>=house_median: #현재 index에 존재하는 값이 해당 세대의 중앙 값 이상일때만 분산처리 실행
+                data_cp.iloc[ i + 1 : i+j+1 , k] = data_cp.iloc[i,k] / (j+1) 
                 #현재 index 및 결측치의 갯수 만큼 지정을 하여, 현재 index에 있는 값을 해당 갯수만큼 나누어 줍니다
             else:  
                 pass #현재 index에 존재하는 값이 중앙 값 미만이면 pass를 실행
         if k%50==0: #for문 진행정도 확인용
                 print(k,"번째 실행중")
 
-    return test2
+    return data_cp
 
-def fbfill_nan(test):
-    test2 = test.copy()
-    test2 = test2.fillna(method='ffill', limit= 4)
-    test2 = test2.fillna(method='bfill', limit= 3)
-    
-    # for k in range(1, len(test2.columns) ): #시간을 제외한 1열부터 마지막 열까지를 for문으로 작동시킵니다.
-    #     counting=test2.loc[ test2.iloc[:,k].isnull()==False ][ test2.columns[k] ].index
-
-    #     df=DataFrame( list( zip( counting[:-1], counting[1:] - counting[:-1] -1  ) ), columns=['index','count'] )
-
-    #     df2= df[ (df['count'] > 0) ] #결측치가 존재하는 부분만 추출
-    #     df2=df2.reset_index(drop=True) #기존에 존재하는 index를 초기화 하여 이후 for문에 사용함
-
-    #     for i,j in zip( df2['index'], df2['count'] ) : # i = 해당 세대에서 값이 존재하는 index, j = 현재 index 밑의 결측치 갯수
-    #         if j <= 6: 
-    #             f_limit = b_limit = j / 2
-    #             if f_limit % 1 != 0:
-    #                 f_limit += 1
-    #             test2 = test2.fillna(method='ffill', limit= int(f_limit))
-    #             if int(b_limit) > 0:
-    #                 test2 = test2.fillna(method='bfill', limit= int(b_limit))
-            
+def fbfill_nan(data):
+    data_cp = data.copy()
+    data_cp = data_cp.fillna(method='ffill', limit= 4)
+    data_cp = data_cp.fillna(method='bfill', limit= 3)
                     
-    return test2
+    return data_cp
 
 
 
-def adjust_null(test):
-    test2 = test.copy()
-    for k in range(1, len(test2.columns) ): #시간을 제외한 1열부터 마지막 열까지를 for문으로 작동시킵니다.
-        counting=test2.loc[ test2.iloc[:,k].isnull()==False ][ test2.columns[k] ].index
+def drop_notfullday(data):
+    data_cp = data.copy()
+    for k in range(1, len(data_cp.columns) ): #시간을 제외한 1열부터 마지막 열까지를 for문으로 작동시킵니다.
+        house = data.cp.iloc[:, k]
+        nan_info_df = find_na(house, limit=0)
 
-        df=DataFrame( list( zip( counting[:-1], counting[1:] - counting[:-1] -1  ) ), columns=['index','count'] )
-
-        df2= df[ (df['count'] > 0) ] #결측치가 존재하는 부분만 추출
-        df2=df2.reset_index(drop=True) #기존에 존재하는 index를 초기화 하여 이후 for문에 사용함
-
-        for i,j in zip( df2['index'], df2['count'] ) : # i = 해당 세대에서 값이 존재하는 index, j = 현재 index 밑의 결측치 갯수
+        for i,j in zip( nan_info_df['index'], nan_info_df['count'] ) : # i = 해당 세대에서 값이 존재하는 index, j = 현재 index 밑의 결측치 갯수
             start_index = i + 1
             end_index = i + j
             
             start_index = start_index - (start_index % 24)
             end_index = end_index + (24 -(end_index % 24))
+            data_cp.iloc[start_index : end_index, k] = None
 
-            # print(start_index)
-            # print(end_index)
-            test2.iloc[start_index : end_index, k] = None
+    return data_cp
 
-        # counting=test2.loc[ test2.iloc[:,k].isnull()==False ][ test2.columns[k] ].index
-        # df=DataFrame( list( zip( counting[:-1], counting[1:] - counting[:-1] -1  ) ), columns=['index','count'] )
-        # df2= df[ (df['count'] > 24) ] #결측치가 존재하는 부분만 추출
-        # df2=df2.reset_index(drop=True) #기존에 존재하는 index를 초기화 하여 이후 for문에 사용함
-
-        
-        # for i,j in zip( df2['index'], df2['count'] ) : # i = 해당 세대에서 값이 존재하는 index, j = 현재 index 밑의 결측치 갯수
-        #     index_list = np.arange(i, i + j)
-        #     print(index_list)
-        #     test2 = test2.iloc[:, k].drop(index_list)
-            
-
-
-
-
-
-    return test2
-
-def drop_null(data):
+def drop_na(data, limit= 24):
 
     ########### 첫번째 데이터까지의 nan 값들 제거
     counting = data.loc[ data.isnull()==False].index
@@ -126,7 +90,7 @@ def drop_null(data):
 
     df=DataFrame( list( zip( counting[:-1], counting[1:] - counting[:-1] -1  ) ), columns=['index','count'] )
 
-    df2= df[ (df['count'] > 24) ] #결측치가 존재하는 부분만 추출
+    df2= df[ (df['count'] > limit) ] #결측치가 존재하는 부분만 추출
     df2=df2.reset_index(drop=True) #기존에 존재하는 index를 초기화 하여 이후 for문에 사용함
 
     for i,j in zip( df2['index'], df2['count'] ) : # i = 해당 세대에서 값이 존재하는 index, j = 현재 index 밑의 결측치 갯수
@@ -136,15 +100,15 @@ def drop_null(data):
 
     return data
             
-def drop_dummy(test):
-    test2 = test.copy()
-    for k in range(1, len(test2.columns) ): 
-        is_dummy = not math.isnan(test2.iloc[0, k]) 
+def drop_dummy(data):
+    data_cp = data.copy()
+    for k in range(1, len(data_cp.columns) ): 
+        is_dummy = not math.isnan(data_cp.iloc[0, k]) 
 
         if is_dummy:
-            test2.iloc[1394:3468, k] = None
+            data_cp.iloc[1394:3468, k] = None
 
-    return test2
+    return data_cp
 
 
 

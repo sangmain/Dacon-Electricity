@@ -159,3 +159,156 @@ test_stationarity(df2[key].dropna())
 ![out6](./image/out6.PNG)
 
 As the above image shows, our data is stationary which makes predicting easier.
+
+# Data Preprocess
+First of all, the data seems to have a lot of Nan values and in some house, Nan values even outweight the true data. As Dacon provides a simple way to get rid of some of them. **The baseline checks if the value before Nan is greater than the total median of the column.**
+If value > median, the value is divided by the number of the upcoming Nan and fill them. However, as mentioned in Dacon, we know that most of the times, Nan occurs when too much electricty are used. So why not upgrade them?
+
+```python
+def find_na(data, limit=0):
+    counting= data.loc[ data.isnull()==False].index
+
+    df=DataFrame( list( zip( counting[:-1], counting[1:] - counting[:-1] -1  ) ), columns=['index','count'] )
+
+    df2= df[ (df['count'] > limit) ] #결측치가 존재하는 부분만 추출
+    df2=df2.reset_index(drop=True) #기존에 존재하는 index를 초기화 하여 이후 for문에 사용함
+
+    return df2
+
+def overloaded_na_handle(data):
+    data_cp = data.copy()
+
+    for k in range(1, len(data_cp.columns) ): #시간을 제외한 1열부터 마지막 열까지를 for문으로 작동시킵니다.
+        test_median= data_cp.iloc[:,k].median() #값을 대체하는 과정에서 값이 변경 될 것을 대비해 해당 세대의 중앙값을 미리 계산하고 시작합니다.
+        counting= data_cp.loc[ data_cp.iloc[:,k].isnull() == False ][ data_cp.columns[k] ].index
+
+        df=DataFrame( list( zip( counting[:-1], counting[1:] - counting[:-1] -1  ) ), columns=['index','count'] )
+
+        df2= df[ (df['count'] > 0) ] #결측치가 존재하는 부분만 추출
+        df2=df2.reset_index(drop=True) #기존에 존재하는 index를 초기화 하여 이후 for문에 사용함
+
+        for i,j in zip( df2['index'], df2['count'] ) : # i = 해당 세대에서 값이 존재하는 index, j = 현재 index 밑의 결측치 갯수
+
+            if data_cp.iloc[i,k]>=test_median: #현재 index에 존재하는 값이 해당 세대의 중앙 값 이상일때만 분산처리 실행
+                data_cp.iloc[ i + 1 : i+j+1 , k] = data_cp.iloc[i,k] / (j+1) 
+                #현재 index 및 결측치의 갯수 만큼 지정을 하여, 현재 index에 있는 값을 해당 갯수만큼 나누어 줍니다
+            else:  
+                pass #현재 index에 존재하는 값이 중앙 값 미만이면 pass를 실행
+        if k%50==0: #for문 진행정도 확인용
+                print(k,"번째 실행중")
+
+    return data_cp
+
+```
+overloaded_na_handle() 
+If value > median, the value is divided by the number of the upcoming Nan and fill them like the baseline **but the value before Na doesn't change**
+
+```python
+def fbfill_nan(data):
+    data_cp = data.copy()
+    data_cp = data_cp.fillna(method='ffill', limit= 1)
+    return data_cp
+```
+This function fills one na by copying the data above. Used this function because there is many single Na present in the data.
+
+
+```python
+def drop_notfullday(data):
+    data_cp = data.copy()
+    for k in range(1, len(data_cp.columns) ): #시간을 제외한 1열부터 마지막 열까지를 for문으로 작동시킵니다.
+        house = data.cp.iloc[:, k]
+        nan_info_df = find_na(house, limit=0)
+
+        for i,j in zip( nan_info_df['index'], nan_info_df['count'] ) : # i = 해당 세대에서 값이 존재하는 index, j = 현재 index 밑의 결측치 갯수
+            start_index = i + 1
+            end_index = i + j
+            
+            start_index = start_index - (start_index % 24)
+            end_index = end_index + (24 -(end_index % 24))
+            data_cp.iloc[start_index : end_index, k] = None
+
+    return data_cp
+```
+Drop a whole day which doesn't have 24 hours of data
+
+
+```python
+def drop_na(data, limit= 24):
+
+    ########### 첫번째 데이터까지의 nan 값들 제거
+    counting = data.loc[ data.isnull()==False].index
+    first_data_idx = counting[0]
+    end_index = first_data_idx + (24 -(first_data_idx % 24))
+    # data.iloc[counting[0] : end_index, k] = None
+
+    index_list = np.arange(0, end_index)
+
+    data = data.drop(index_list)
+
+    df=DataFrame( list( zip( counting[:-1], counting[1:] - counting[:-1] -1  ) ), columns=['index','count'] )
+
+    df2= df[ (df['count'] > limit) ] #결측치가 존재하는 부분만 추출
+    df2=df2.reset_index(drop=True) #기존에 존재하는 index를 초기화 하여 이후 for문에 사용함
+
+    for i,j in zip( df2['index'], df2['count'] ) : # i = 해당 세대에서 값이 존재하는 index, j = 현재 index 밑의 결측치 갯수
+        i += 1
+        index_list = np.arange(i, i + j)
+        data = data.drop(index_list)
+
+    return data
+
+```
+Drop na values over one day so that when making our train dataset, it makes easier
+
+These were the way to get rid of Na values
+
+Now, what we should do to train our model is to
+**- change data shape to make LSTM easier to learn**
+**- normalize and scale data**
+
+Since the data is not normal distributed, we will use MinMaxScaler()
+
+```python
+def split(data, x_size, y_size, gap=1, debug=False):
+
+    x = []; y = []; batch = []
+
+    index = int((len(data) - x_size - y_size) / gap) + 1
+
+    for i in range(index):
+        batch = data[i * gap : i * gap + x_size + y_size]
+        if debug:
+            print(batch, '\n')
+            print(batch.shape)
+        if np.isnan(batch).any():
+            continue
+        
+        x.append(batch[0:x_size])
+        y.append(batch[-y_size:])
+
+    pred_data = data[len(data) - x_size: ]
+    pred_data = pred_data.reshape(-1, pred_data.shape[0])
+
+    return np.array(x), np.array(y), pred_data
+```
+Split the data to match LSTM 
+
+
+
+# Model
+```python
+def build_model():
+
+    #### LSTM
+    model = Sequential()
+    model.add(LSTM(100, return_sequences=False, input_shape=(x_shape, 1)))
+    model.add(Dropout(0.25))
+    model.add(Dense(y_shape, activation='linear'))
+
+model = build_model()
+model.compile(optimizer='adam', loss='mse')
+
+early_stopping = EarlyStopping(monitor='val_loss', patience=5, mode='auto')
+model.fit(x_train, y_train, batch_size=512, epochs=2, callbacks=[early_stopping], validation_data=(x_test, y_test), verbose= 0)
+loss = model.evaluate(x_test, y_test, verbose= 0)
+```
