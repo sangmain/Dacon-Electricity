@@ -31,21 +31,19 @@ Dacon provides already made code sub_baseline.py which gives loss score of 41.41
 I found out that it only trains on test data and fitted for every existing houses. I thought it was perfectly right way to do it.
 So I analysed test.csv
 
-'''python
-df=df_ori.loc[:,['Time',key]] # 한 가구만 가져온다
+'''
+df=df_ori.loc[:,['Time',key]]
 print(df)
 df = df.dropna()
-#시간을 연도, 4분기, 달, 일로 보여준다
 df['Time']=pd.to_datetime(df['Time']) 
 df['year'] = df['Time'].apply(lambda x: x.year)
 df['quarter'] = df['Time'].apply(lambda x: x.quarter)
 df['month'] = df['Time'].apply(lambda x: x.month)
 df['day'] = df['Time'].apply(lambda x: x.day)
 df=df.loc[:,['Time',key, 'year','quarter','month','day']]
-df.sort_values('Time', inplace=True, ascending=True) # 시간 순으로 재배열
-df = df.reset_index(drop=True) # 인덱스 초기화
+df.sort_values('Time', inplace=True, ascending=True)
+df = df.reset_index(drop=True)
 
-#주일과 주말까지 추가한다
 df["weekday"]=df.apply(lambda row: row["Time"].weekday(),axis=1)
 df["weekday"] = (df["weekday"] < 5).astype(int)
 '''
