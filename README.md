@@ -31,7 +31,7 @@ Dacon provides already made code sub_baseline.py which gives loss score of 41.41
 I found out that it only trains on test data and fitted for every existing houses. I thought it was perfectly right way to do it.
 So I analysed test.csv
 
-![test](./image/test.png)
+![test](./image/test.PNG)
 This is the format of test.csv
 
 ```python
@@ -83,6 +83,7 @@ In case of **Kurtosis**, it has value of 0 when Normal Distributed. If it is gre
 
 In case of **Skewness**, it has value between -0.5 and 0.5 when Normal Distributed.
 
+# Yearly & Quarterly Energy Consumed
 ```python
 plt.figure(figsize=(14,5))
 plt.subplot(1,2,1)
@@ -103,7 +104,7 @@ plt.tight_layout();
 
 As we compare the output of each house, Yearly consumation generally dropped time to time while Quartely cosumation differed from house to house.
 
-
+# Weekdays & Weekend
 ```python
 dic={0:'Weekend',1:'Weekday'}
 df['Day'] = df.weekday.map(dic)
@@ -117,3 +118,44 @@ plt.legend(loc='upper right');
 plt.show()
 ```
 ![out4](./image/out4.PNG)
+
+# Dickey-Fuller test
+**Null Hypothesis(H0)**: It means that the time series has a unit root so is not stationary. It has some time dependent structure.
+
+**Alternate Hypothesis(H1)**: It means that the time series doest not have a unit root so is stationary. It does not have time dependent structure.
+
+p-value > **0.05**: Null Hypothesis
+p-value <= **0.05**: Alternate Hypothesis
+
+
+```python
+df2=df1.resample('D', how=np.mean)
+
+def test_stationarity(timeseries):
+    rolmean = timeseries.rolling(window=30).mean()
+    rolstd = timeseries.rolling(window=30).std()
+    
+    plt.figure(figsize=(14,5))
+    sns.despine(left=True)
+    orig = plt.plot(timeseries, color='blue',label='Original')
+    mean = plt.plot(rolmean, color='red', label='Rolling Mean')
+    std = plt.plot(rolstd, color='black', label = 'Rolling Std')
+
+    plt.legend(loc='best'); plt.title('Rolling Mean & Standard Deviation')
+    plt.show()
+    
+    print ('<Results of Dickey-Fuller Test>')
+    dftest = adfuller(timeseries, autolag='AIC')
+    dfoutput = pd.Series(dftest[0:4],
+                        index=['Test Statistic','p-value','#Lags Used','Number of Observations Used'])
+    for key,value in dftest[4].items():
+        dfoutput['Critical Value (%s)'%key] = value
+    print(dfoutput)
+
+test_stationarity(df2[key].dropna())
+```
+
+![out5](./image/out5.PNG)
+![out6](./image/out6.PNG)
+
+As the above image shows, our data is stationary which makes predicting easier.
