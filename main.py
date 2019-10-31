@@ -3,7 +3,7 @@ import numpy as np # 데이터 전처리
 from pandas import DataFrame #데이터 전처리 
 import sys
 import math
-from preprocess import * 
+import preprocess as pp
 from data_explanation import *
 
 from keras.models import Sequential
@@ -40,18 +40,18 @@ if __name__ == '__main__':
     
     weather = pd.read_csv("input/incheon_weather.csv", encoding="euc-kr")
     
-    # test = pd.read_csv('input/test.csv')
-    # test = nan_preprocess(test)
-    # test.to_csv("input/nan_pre.csv", index=False)
+    test = pd.read_csv('input/test.csv')
+    test = pp.overloaded_na_handle(test)
+    test.to_csv("input/nan_pre.csv", index=False)
 
 
     submission = pd.read_csv("input/submission_1002.csv")
 
     # # 전처리
     test = pd.read_csv('input/nan_pre.csv')
-    test = drop_dummy(test)
-    test = fbfill_nan(test)
-    test = adjust_null(test)
+    test = pp.drop_dummy(test)
+    test = pp.fbfill_nan(test)
+    test = pp.adjust_null(test)
     try:
         test.to_csv("input/test_result.csv", index=False)
     except:
@@ -70,7 +70,7 @@ if __name__ == '__main__':
         data = test.iloc[:, i]
         idx = data.index
 
-        data = drop_null(data)
+        data = pp.drop_null(data)
         
         data = data.values 
         data = data.astype('float32')
