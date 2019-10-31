@@ -75,8 +75,8 @@ sns.distplot(df[key]);
 print( 'Kurtosis of normal distribution: {}'.format(stats.kurtosis(df[key])))
 print( 'Skewness of normal distribution: {}'.format(stats.skew(df[key])))
 ```
-![out1](./image/out1.png)
-![out2](./image/out2.png)
+![out1](./image/out1.PNG)
+![out2](./image/out2.PNG)
 
 
 In case of **Kurtosis**, it has value of 0 when Normal Distributed. If it is greater than zero, distribution has heavy tails and opposite on the other way
@@ -99,7 +99,7 @@ plt.title('Box plot of Quarterly Energy Consumed')
 sns.despine(left=True)
 plt.tight_layout();
 ```
-![out3](./image/out3.png)
+![out3](./image/out3.PNG)
 
 As we compare the output of each house, Yearly consumation generally dropped time to time while Quartely cosumation differed from house to house.
 
@@ -116,4 +116,4 @@ plt.legend(loc='upper right');
 
 plt.show()
 ```
-![out4](./image/out4.png)
+![out4](./image/out4.PNG)
