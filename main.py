@@ -51,7 +51,7 @@ if __name__ == '__main__':
     test = pd.read_csv('input/nan_pre.csv')
     test = pp.drop_dummy(test)
     test = pp.fbfill_nan(test)
-    test = pp.adjust_null(test)
+    test = pp.drop_notfullday(test)
     try:
         test.to_csv("input/test_result.csv", index=False)
     except:
@@ -83,14 +83,14 @@ if __name__ == '__main__':
         print(start_time)
         
         weather = weather[weather.iloc[: : , :]]
-        degree, __ = weather_preprocess(weather)
+        degree, __ = pp.weather_preprocess(weather)
         scaler_degree = MinMaxScaler()
         degree = degree.reshape(-1, 1)
         # degree = scaler_degree.fit_transform(degree)
         degree = degree.reshape(-1)
      
 
-        split2(data, degree, x_shape, y_shape, gap=1, debug=True)
+        pp.split2(data, degree, x_shape, y_shape, gap=1, debug=True)
 
         sys.exit()
 
