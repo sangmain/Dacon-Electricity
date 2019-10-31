@@ -58,7 +58,7 @@ for k in range(1, len(df_ori.columns) ): #시간을 제외한 1열부터 마지�
     print( 'Kurtosis of normal distribution: {}'.format(stats.kurtosis(df[key])))
     print( 'Skewness of normal distribution: {}'.format(stats.skew(df[key])))
 
-    plt.show()
+    # plt.show()
 
 
     plt.figure(figsize=(14,5))
@@ -77,7 +77,7 @@ for k in range(1, len(df_ori.columns) ): #시간을 제외한 1열부터 마지�
     plt.tight_layout();
 
 
-    plt.show()
+    # plt.show()
 
     dic={0:'Weekend',1:'Weekday'}
     df['Day'] = df.weekday.map(dic)
@@ -89,31 +89,32 @@ for k in range(1, len(df_ori.columns) ): #시간을 제외한 1열부터 마지�
     sns.despine(left=True, bottom=True) 
     plt.legend(loc='upper right');
 
-    plt.show()
+    # plt.show()
 
 
-    # df2=df1.resample('D', how=np.mean)
+    df2=df.loc[:,['Time', key]]
+    df2.set_index('Time',inplace=True)
 
-    # def test_stationarity(timeseries):
-    #     rolmean = timeseries.rolling(window=30).mean()
-    #     rolstd = timeseries.rolling(window=30).std()
+    def test_stationarity(timeseries):
+        rolmean = timeseries.rolling(window=30).mean()
+        rolstd = timeseries.rolling(window=30).std()
         
-    #     plt.figure(figsize=(14,5))
-    #     sns.despine(left=True)
-    #     orig = plt.plot(timeseries, color='blue',label='Original')
-    #     mean = plt.plot(rolmean, color='red', label='Rolling Mean')
-    #     std = plt.plot(rolstd, color='black', label = 'Rolling Std')
+        plt.figure(figsize=(14,5))
+        sns.despine(left=True)
+        orig = plt.plot(timeseries, color='blue',label='Original')
+        mean = plt.plot(rolmean, color='red', label='Rolling Mean')
+        std = plt.plot(rolstd, color='black', label = 'Rolling Std')
 
-    #     plt.legend(loc='best'); plt.title('Rolling Mean & Standard Deviation')
-    #     plt.show()
+        plt.legend(loc='best'); plt.title('Rolling Mean & Standard Deviation')
+        plt.show()
         
-    #     print ('<Results of Dickey-Fuller Test>')
-    #     dftest = adfuller(timeseries, autolag='AIC')
-    #     dfoutput = pd.Series(dftest[0:4],
-    #                         index=['Test Statistic','p-value','#Lags Used','Number of Observations Used'])
-    #     for key,value in dftest[4].items():
-    #         dfoutput['Critical Value (%s)'%key] = value
-    #     print(dfoutput)
-    # test_stationarity(df2[key].dropna())
+        print ('<Results of Dickey-Fuller Test>')
+        dftest = adfuller(timeseries, autolag='AIC')
+        dfoutput = pd.Series(dftest[0:4],
+                            index=['Test Statistic','p-value','#Lags Used','Number of Observations Used'])
+        for key,value in dftest[4].items():
+            dfoutput['Critical Value (%s)'%key] = value
+        print(dfoutput)
+    test_stationarity(df2[key].dropna())
 
     input()
