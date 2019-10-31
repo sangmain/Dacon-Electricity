@@ -31,7 +31,7 @@ Dacon provides already made code sub_baseline.py which gives loss score of 41.41
 I found out that it only trains on test data and fitted for every existing houses. I thought it was perfectly right way to do it.
 So I analysed test.csv
 
-'''
+'''python
 df=df_ori.loc[:,['Time',key]]
 print(df)
 df = df.dropna()
@@ -43,7 +43,6 @@ df['day'] = df['Time'].apply(lambda x: x.day)
 df=df.loc[:,['Time',key, 'year','quarter','month','day']]
 df.sort_values('Time', inplace=True, ascending=True)
 df = df.reset_index(drop=True)
-
 df["weekday"]=df.apply(lambda row: row["Time"].weekday(),axis=1)
 df["weekday"] = (df["weekday"] < 5).astype(int)
 '''
