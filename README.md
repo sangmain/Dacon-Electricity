@@ -1,7 +1,6 @@
 # Dacon-Energy
-Dacon is a **data competition website** like kaggle for example. 
-This repo is my attempt on **Time Series Analysis & Forecasting with LSTM**. The point of the competition is to predict energy consumation for 200 families.
-Competition website: https://dacon.io/cpt11
+This repo is my try on a competition in https://dacon.io/cpt11
+The point of the competition is to predict energy consumation for 200 families and I did **Time Series Analysis & Forecasting with LSTM** 
 
 
 # Data
