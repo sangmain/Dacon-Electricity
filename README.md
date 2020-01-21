@@ -1,5 +1,7 @@
 # Dacon-Energy
-This repo is my try on a competition in https://dacon.io/cpt11
+This repo is my try on a competition in https://dacon.io/cpt11 made to 27th place.
+![ranking](./image/ranking.jpg)
+
 The point of the competition is to predict energy consumation for 200 families and I did **Time Series Analysis & Forecasting with LSTM** 
 
 
